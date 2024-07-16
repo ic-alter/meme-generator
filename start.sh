@@ -12,3 +12,6 @@ docker run -d \
   -e BAIDU_TRANS_APIKEY='' \
   -e LOG_LEVEL='INFO' \
   meetwq/meme-generator:main
+
+
+  # 添加新表情包后，需要移除原来的镜像
