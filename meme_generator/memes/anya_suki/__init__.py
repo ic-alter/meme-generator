@@ -1,16 +1,20 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
 
 from meme_generator import add_meme
 from meme_generator.exception import TextOverLength
+from meme_generator.tags import MemeTags
 from meme_generator.utils import make_jpg_or_gif
 
 img_dir = Path(__file__).parent / "images"
 
+default_text = "阿尼亚喜欢这个"
+
 
 def anya_suki(images: list[BuildImage], texts: list[str], args):
-    text = texts[0] if texts else "阿尼亚喜欢这个"
+    text = texts[0] if texts else default_text
     frame = BuildImage.open(img_dir / "0.png")
     try:
         frame.draw_text(
@@ -24,11 +28,11 @@ def anya_suki(images: list[BuildImage], texts: list[str], args):
     except ValueError:
         raise TextOverLength(text)
 
-    def make(img: BuildImage) -> BuildImage:
-        img = img.convert("RGBA").resize((305, 235), keep_ratio=True)
+    def make(imgs: list[BuildImage]) -> BuildImage:
+        img = imgs[0].convert("RGBA").resize((305, 235), keep_ratio=True)
         return frame.copy().paste(img, (106, 72), below=True)
 
-    return make_jpg_or_gif(images[0], make)
+    return make_jpg_or_gif(images, make)
 
 
 add_meme(
@@ -38,6 +42,9 @@ add_meme(
     max_images=1,
     min_texts=0,
     max_texts=1,
-    default_texts=["阿尼亚喜欢这个"],
+    default_texts=[default_text],
     keywords=["阿尼亚喜欢"],
+    tags=MemeTags.anya,
+    date_created=datetime(2022, 5, 10),
+    date_modified=datetime(2023, 2, 14),
 )

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pil_utils import BuildImage
 
 from meme_generator import add_meme
@@ -12,11 +14,19 @@ def alike(images: list[BuildImage], texts, args):
         (365, 10, 460, 140), "一样", max_fontsize=40, min_fontsize=30, halign="left"
     )
 
-    def make(img: BuildImage) -> BuildImage:
-        img = img.convert("RGBA").resize((150, 150), keep_ratio=True)
+    def make(imgs: list[BuildImage]) -> BuildImage:
+        img = imgs[0].convert("RGBA").resize((150, 150), keep_ratio=True)
         return frame.copy().paste(img, (200, 15), alpha=True)
 
-    return make_jpg_or_gif(images[0], make)
+    return make_jpg_or_gif(images, make)
 
 
-add_meme("alike", alike, min_images=1, max_images=1, keywords=["一样"])
+add_meme(
+    "alike",
+    alike,
+    min_images=1,
+    max_images=1,
+    keywords=["一样"],
+    date_created=datetime(2022, 1, 2),
+    date_modified=datetime(2023, 2, 22),
+)

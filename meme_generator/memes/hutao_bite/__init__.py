@@ -1,9 +1,11 @@
+from datetime import datetime
 from pathlib import Path
 
 from PIL.Image import Image as IMG
 from pil_utils import BuildImage
 
 from meme_generator import add_meme
+from meme_generator.tags import MemeTags
 from meme_generator.utils import save_gif
 
 img_dir = Path(__file__).parent / "images"
@@ -21,4 +23,13 @@ def hutao_bite(images: list[BuildImage], texts, args):
     return save_gif(frames, 0.1)
 
 
-add_meme("hutao_bite", hutao_bite, min_images=1, max_images=1, keywords=["胡桃啃"])
+add_meme(
+    "hutao_bite",
+    hutao_bite,
+    min_images=1,
+    max_images=1,
+    keywords=["胡桃啃"],
+    tags=MemeTags.hutao,
+    date_created=datetime(2022, 11, 29),
+    date_modified=datetime(2023, 2, 14),
+)

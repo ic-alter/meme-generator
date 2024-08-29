@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
@@ -12,8 +13,8 @@ def confuse(images: list[BuildImage], texts, args):
     img_w = min(images[0].width, 500)
 
     def maker(i: int) -> Maker:
-        def make(img: BuildImage) -> BuildImage:
-            img = img.convert("RGBA").resize_width(img_w)
+        def make(imgs: list[BuildImage]) -> BuildImage:
+            img = imgs[0].convert("RGBA").resize_width(img_w)
             frame = BuildImage.open(img_dir / f"{i}.png").resize(
                 img.size, keep_ratio=True
             )
@@ -24,8 +25,16 @@ def confuse(images: list[BuildImage], texts, args):
         return make
 
     return make_gif_or_combined_gif(
-        images[0], maker, 100, 0.02, FrameAlignPolicy.extend_loop, input_based=True
+        images, maker, 100, 0.02, FrameAlignPolicy.extend_loop
     )
 
 
-add_meme("confuse", confuse, min_images=1, max_images=1, keywords=["迷惑"])
+add_meme(
+    "confuse",
+    confuse,
+    min_images=1,
+    max_images=1,
+    keywords=["迷惑"],
+    date_created=datetime(2022, 9, 4),
+    date_modified=datetime(2023, 2, 14),
+)

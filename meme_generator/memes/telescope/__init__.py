@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
@@ -10,8 +11,8 @@ img_dir = Path(__file__).parent / "images"
 
 def telescope(images: list[BuildImage], texts, args):
     def maker(i: int) -> Maker:
-        def make(img: BuildImage) -> BuildImage:
-            img = img.convert("RGBA").square()
+        def make(imgs: list[BuildImage]) -> BuildImage:
+            img = imgs[0].convert("RGBA").square()
             img_big = img.resize((600, 600))
             img_small = img.resize((230, 230))
             frame = BuildImage.open(img_dir / f"{i}.png")
@@ -36,8 +37,16 @@ def telescope(images: list[BuildImage], texts, args):
         return make
 
     return make_gif_or_combined_gif(
-        images[0], maker, 69, 0.1, FrameAlignPolicy.extend_first
+        images, maker, 69, 0.1, FrameAlignPolicy.extend_first
     )
 
 
-add_meme("telescope", telescope, min_images=1, max_images=1, keywords=["望远镜"])
+add_meme(
+    "telescope",
+    telescope,
+    min_images=1,
+    max_images=1,
+    keywords=["望远镜"],
+    date_created=datetime(2024, 1, 18),
+    date_modified=datetime(2024, 1, 18),
+)

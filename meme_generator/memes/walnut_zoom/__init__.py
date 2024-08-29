@@ -1,8 +1,10 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
 
 from meme_generator import add_meme
+from meme_generator.tags import MemeTags
 from meme_generator.utils import FrameAlignPolicy, Maker, make_gif_or_combined_gif
 
 img_dir = Path(__file__).parent / "images"
@@ -18,18 +20,27 @@ def walnut_zoom(images: list[BuildImage], texts, args):
     # fmt: on
 
     def maker(i: int) -> Maker:
-        def make(img: BuildImage) -> BuildImage:
+        def make(imgs: list[BuildImage]) -> BuildImage:
             frame = BuildImage.open(img_dir / f"{i}.png")
             x, y, w, h = locs[seq[i]]
-            img = img.convert("RGBA").resize((w, h), keep_ratio=True)
+            img = imgs[0].convert("RGBA").resize((w, h), keep_ratio=True)
             frame.paste(img.rotate(4.2, expand=True), (x, y), below=True)
             return frame
 
         return make
 
     return make_gif_or_combined_gif(
-        images[0], maker, 24, 0.2, FrameAlignPolicy.extend_last
+        images, maker, 24, 0.2, FrameAlignPolicy.extend_last
     )
 
 
-add_meme("walnut_zoom", walnut_zoom, min_images=1, max_images=1, keywords=["胡桃放大"])
+add_meme(
+    "walnut_zoom",
+    walnut_zoom,
+    min_images=1,
+    max_images=1,
+    keywords=["胡桃放大"],
+    tags=MemeTags.walnut,
+    date_created=datetime(2022, 10, 1),
+    date_modified=datetime(2023, 2, 14),
+)

@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage, Text2Image
@@ -12,7 +13,7 @@ def make_friend(images: list[BuildImage], texts: list[str], args: MemeArgsModel)
     img = images[0].convert("RGBA")
 
     if not texts and not args.user_infos:
-        raise TextOrNameNotEnough("make_friend")
+        raise TextOrNameNotEnough()
     name = texts[0] if texts else args.user_infos[0].name
 
     bg = BuildImage.open(img_dir / "0.png")
@@ -46,4 +47,6 @@ add_meme(
     min_texts=0,
     max_texts=1,
     keywords=["交个朋友"],
+    date_created=datetime(2022, 3, 9),
+    date_modified=datetime(2023, 2, 14),
 )

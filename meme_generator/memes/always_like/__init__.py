@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage, Text2Image
@@ -13,7 +14,7 @@ def always_like(images: list[BuildImage], texts: list[str], args: MemeArgsModel)
     names = [info.name for info in args.user_infos]
 
     if len(images) > len(texts) + len(names):
-        raise TextOrNameNotEnough("always_like")
+        raise TextOrNameNotEnough()
     texts = texts + names
 
     img = images[0].convert("RGBA")
@@ -90,4 +91,6 @@ add_meme(
     min_texts=0,
     max_texts=6,
     keywords=["我永远喜欢"],
+    date_created=datetime(2022, 3, 14),
+    date_modified=datetime(2023, 2, 14),
 )

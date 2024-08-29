@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 from pathlib import Path
 
 from PIL.Image import Image as IMG
@@ -43,14 +44,23 @@ def dont_touch(images: list[BuildImage], texts, args):
             block = block.rotate(45, expand=True)
             img.paste(block, (x, y), alpha=True)
 
-    def make(img: BuildImage) -> BuildImage:
+    def make(imgs: list[BuildImage]) -> BuildImage:
+        img = imgs[0]
         img_frame = frame.copy()
         colors = get_dominant_colors(img.image)
         paste_random_blocks(img_frame, colors)
         img = img.convert("RGBA").resize((250, 250), keep_ratio=True, inside=True)
         return img_frame.paste(img, (25, 460), alpha=True)
 
-    return make_jpg_or_gif(images[0], make)
+    return make_jpg_or_gif(images, make)
 
 
-add_meme("dont_touch", dont_touch, min_images=1, max_images=1, keywords=["别碰"])
+add_meme(
+    "dont_touch",
+    dont_touch,
+    min_images=1,
+    max_images=1,
+    keywords=["别碰"],
+    date_created=datetime(2023, 4, 27),
+    date_modified=datetime(2023, 4, 27),
+)

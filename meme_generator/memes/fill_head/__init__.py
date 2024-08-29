@@ -1,8 +1,9 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
 
-from meme_generator import MemeArgsModel, add_meme
+from meme_generator import CommandShortcut, MemeArgsModel, add_meme
 from meme_generator.exception import TextOverLength
 from meme_generator.utils import make_jpg_or_gif
 
@@ -20,11 +21,11 @@ def fill_head(images: list[BuildImage], texts: list[str], args: MemeArgsModel):
     except ValueError:
         raise TextOverLength(name)
 
-    def make(img: BuildImage) -> BuildImage:
-        img = img.convert("RGBA").resize((210, 170), keep_ratio=True, inside=True)
+    def make(imgs: list[BuildImage]) -> BuildImage:
+        img = imgs[0].convert("RGBA").resize((210, 170), keep_ratio=True, inside=True)
         return frame.copy().paste(img, (150, 2), alpha=True)
 
-    return make_jpg_or_gif(images[0], make)
+    return make_jpg_or_gif(images, make)
 
 
 add_meme(
@@ -35,5 +36,13 @@ add_meme(
     min_texts=0,
     max_texts=1,
     keywords=["满脑子"],
-    patterns=[r"满脑子都是(\S+)"],
+    shortcuts=[
+        CommandShortcut(
+            key=r"满脑子都是(?P<name>\S+)",
+            args=["{name}"],
+            humanized="满脑子都是xx",
+        )
+    ],
+    date_created=datetime(2023, 6, 3),
+    date_modified=datetime(2023, 6, 3),
 )

@@ -1,8 +1,10 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
 
 from meme_generator import add_meme
+from meme_generator.tags import MemeTags
 from meme_generator.utils import save_gif
 
 img_dir = Path(__file__).parent / "images"
@@ -21,5 +23,12 @@ def thump_wildly(images: list[BuildImage], texts, args):
 
 
 add_meme(
-    "thump_wildly", thump_wildly, min_images=1, max_images=1, keywords=["捶爆", "爆捶"]
+    "thump_wildly",
+    thump_wildly,
+    min_images=1,
+    max_images=1,
+    keywords=["捶爆", "爆捶"],
+    tags=MemeTags.arknights,
+    date_created=datetime(2023, 3, 31),
+    date_modified=datetime(2023, 3, 31),
 )

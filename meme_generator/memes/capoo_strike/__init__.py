@@ -1,8 +1,10 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
 
 from meme_generator import add_meme
+from meme_generator.tags import MemeTags
 from meme_generator.utils import FrameAlignPolicy, Maker, make_gif_or_combined_gif
 
 img_dir = Path(__file__).parent / "images"
@@ -20,8 +22,8 @@ def capoo_strike(images: list[BuildImage], texts, args):
     )
 
     def maker(i: int) -> Maker:
-        def make(img: BuildImage) -> BuildImage:
-            img = img.convert("RGBA").resize((200, 160), keep_ratio=True)
+        def make(imgs: list[BuildImage]) -> BuildImage:
+            img = imgs[0].convert("RGBA").resize((200, 160), keep_ratio=True)
             points, pos = params[i]
             frame = BuildImage.open(img_dir / f"{i}.png")
             frame.paste(img.perspective(points), pos, below=True)
@@ -30,7 +32,7 @@ def capoo_strike(images: list[BuildImage], texts, args):
         return make
 
     return make_gif_or_combined_gif(
-        images[0], maker, 7, 0.05, FrameAlignPolicy.extend_loop
+        images, maker, 7, 0.05, FrameAlignPolicy.extend_loop
     )
 
 
@@ -40,4 +42,7 @@ add_meme(
     min_images=1,
     max_images=1,
     keywords=["咖波撞", "咖波头槌"],
+    tags=MemeTags.capoo,
+    date_created=datetime(2023, 3, 28),
+    date_modified=datetime(2023, 3, 28),
 )

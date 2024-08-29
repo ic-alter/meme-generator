@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PIL import ImageFilter
 from pil_utils import BuildImage, Text2Image
 from pil_utils.gradient import ColorStop, LinearGradient
@@ -8,7 +10,7 @@ from meme_generator.exception import TextOrNameNotEnough, TextOverLength
 
 def ask(images: list[BuildImage], texts: list[str], args: MemeArgsModel):
     if not texts and not args.user_infos:
-        raise TextOrNameNotEnough("ask")
+        raise TextOrNameNotEnough()
 
     name = texts[0] if texts else args.user_infos[0].name
     ta = "他" if args.user_infos and args.user_infos[0].gender == "male" else "她"
@@ -77,5 +79,13 @@ def ask(images: list[BuildImage], texts: list[str], args: MemeArgsModel):
 
 
 add_meme(
-    "ask", ask, min_images=1, max_images=1, min_texts=0, max_texts=1, keywords=["问问"]
+    "ask",
+    ask,
+    min_images=1,
+    max_images=1,
+    min_texts=0,
+    max_texts=1,
+    keywords=["问问"],
+    date_created=datetime(2022, 2, 23),
+    date_modified=datetime(2023, 2, 14),
 )

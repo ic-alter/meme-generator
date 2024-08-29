@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pil_utils import BuildImage
 
 from meme_generator import MemeArgsModel, add_meme
@@ -35,11 +37,11 @@ def little_angel(images: list[BuildImage], texts: list[str], args: MemeArgsModel
     except ValueError:
         raise TextOverLength(name)
 
-    def make(img: BuildImage) -> BuildImage:
-        img = img.convert("RGBA").resize_width(500)
+    def make(imgs: list[BuildImage]) -> BuildImage:
+        img = imgs[0].convert("RGBA").resize_width(500)
         return frame.copy().paste(img, (int(300 - img_w / 2), 110), alpha=True)
 
-    return make_jpg_or_gif(images[0], make)
+    return make_jpg_or_gif(images, make)
 
 
 add_meme(
@@ -50,4 +52,6 @@ add_meme(
     min_texts=0,
     max_texts=1,
     keywords=["小天使"],
+    date_created=datetime(2022, 1, 1),
+    date_modified=datetime(2023, 2, 14),
 )

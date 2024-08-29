@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
@@ -10,8 +11,8 @@ img_dir = Path(__file__).parent / "images"
 
 def vibrate(images: list[BuildImage], texts, args):
     def maker(i: int) -> Maker:
-        def make(img: BuildImage) -> BuildImage:
-            img = img.convert("RGBA").square()
+        def make(imgs: list[BuildImage]) -> BuildImage:
+            img = imgs[0].convert("RGBA").square()
             w = img.size[0]
             locs = [
                 (0, 0),
@@ -27,8 +28,16 @@ def vibrate(images: list[BuildImage], texts, args):
         return make
 
     return make_gif_or_combined_gif(
-        images[0], maker, 5, 0.05, FrameAlignPolicy.extend_loop
+        images, maker, 5, 0.05, FrameAlignPolicy.extend_loop
     )
 
 
-add_meme("vibrate", vibrate, min_images=1, max_images=1, keywords=["震动"])
+add_meme(
+    "vibrate",
+    vibrate,
+    min_images=1,
+    max_images=1,
+    keywords=["震动"],
+    date_created=datetime(2023, 8, 28),
+    date_modified=datetime(2023, 8, 28),
+)

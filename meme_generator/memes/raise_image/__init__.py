@@ -1,3 +1,4 @@
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -15,15 +16,15 @@ def raise_image(images: list[BuildImage], texts, args) -> BytesIO:
 
     bg = BuildImage.open(img_dir / "raise_image.png")
 
-    def make_frame(img: BuildImage) -> BuildImage:
+    def make_frame(imgs: list[BuildImage]) -> BuildImage:
         inner_frame = BuildImage.new("RGBA", inner_size, "white")
         inner_frame = inner_frame.paste(
-            img.convert("RGBA").resize(inner_size, keep_ratio=True),
+            imgs[0].convert("RGBA").resize(inner_size, keep_ratio=True),
             alpha=True,
         )
         return bg.copy().paste(inner_frame, paste_pos, alpha=True, below=True)
 
-    return make_jpg_or_gif(images[0], make_frame, keep_transparency=True)
+    return make_jpg_or_gif(images, make_frame)
 
 
 add_meme(
@@ -32,4 +33,6 @@ add_meme(
     min_images=1,
     max_images=1,
     keywords=["举"],
+    date_created=datetime(2023, 8, 9),
+    date_modified=datetime(2023, 8, 9),
 )

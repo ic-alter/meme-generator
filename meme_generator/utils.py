@@ -5,31 +5,27 @@ import math
 import random
 import time
 from collections.abc import Coroutine
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial, wraps
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Protocol,
-    TypeVar,
-)
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, TypeVar
 
 import httpx
 from PIL.Image import Image as IMG
 from pil_utils import BuildImage, Text2Image
-from pil_utils.types import ColorType, FontStyle, FontWeight
+from pil_utils.types import ColorType
 from typing_extensions import ParamSpec
 
 from .config import meme_config
-from .exception import MemeGeneratorException
+from .exception import MemeFeedback
 
 if TYPE_CHECKING:
     from .meme import Meme
+
+resources_dir = Path(__file__).parent / "resources"
+
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -98,14 +94,6 @@ def save_gif(frames: list[IMG], duration: float) -> BytesIO:
     return save_gif(new_frames, duration)
 
 
-class Maker(Protocol):
-    def __call__(self, img: BuildImage) -> BuildImage: ...
-
-
-class GifMaker(Protocol):
-    def __call__(self, i: int) -> Maker: ...
-
-
 def get_avg_duration(image: IMG) -> float:
     if not getattr(image, "is_animated", False):
         return 0
@@ -114,81 +102,20 @@ def get_avg_duration(image: IMG) -> float:
     for i in range(n_frames):
         image.seek(i)
         total_duration += image.info["duration"]
-    return total_duration / n_frames
+    return total_duration / n_frames / 1000
 
 
 def split_gif(image: IMG) -> list[IMG]:
     frames: list[IMG] = []
-
-    update_mode = "full"
     n_frames = getattr(image, "n_frames", 1)
     for i in range(n_frames):
         image.seek(i)
-        if image.tile:  # type: ignore
-            update_region = image.tile[0][1][2:]  # type: ignore
-            if update_region != image.size:
-                update_mode = "partial"
-                break
-
-    last_frame: Optional[IMG] = None
-    for i in range(n_frames):
-        image.seek(i)
         frame = image.copy()
-        if update_mode == "partial" and last_frame:
-            frame = last_frame.copy().paste(frame)
         frames.append(frame)
     image.seek(0)
     if image.info.__contains__("transparency"):
         frames[0].info["transparency"] = image.info["transparency"]
     return frames
-
-
-def make_jpg_or_gif(
-    img: BuildImage, func: Maker, keep_transparency: bool = False
-) -> BytesIO:
-    """
-    制作静图或者动图
-    :params
-      * ``img``: 输入图片
-      * ``func``: 图片处理函数，输入img，返回处理后的图片
-      * ``keep_transparency``: 传入gif时，是否保留该gif的透明度
-    """
-    image = img.image
-    if not getattr(image, "is_animated", False):
-        return func(img).save_jpg()
-    else:
-        frames = split_gif(image)
-        duration = get_avg_duration(image) / 1000
-        frames = [func(BuildImage(frame)).image for frame in frames]
-        if keep_transparency:
-            image.seek(0)
-            if image.info.__contains__("transparency"):
-                frames[0].info["transparency"] = image.info["transparency"]
-        return save_gif(frames, duration)
-
-
-def make_png_or_gif(
-    img: BuildImage, func: Maker, keep_transparency: bool = False
-) -> BytesIO:
-    """
-    制作静图或者动图
-    :params
-      * ``img``: 输入图片
-      * ``func``: 图片处理函数，输入img，返回处理后的图片
-      * ``keep_transparency``: 传入gif时，是否保留该gif的透明度
-    """
-    image = img.image
-    if not getattr(image, "is_animated", False):
-        return func(img).save_png()
-    else:
-        frames = split_gif(image)
-        duration = get_avg_duration(image) / 1000
-        frames = [func(BuildImage(frame)).image for frame in frames]
-        if keep_transparency:
-            image.seek(0)
-            if image.info.__contains__("transparency"):
-                frames[0].info["transparency"] = image.info["transparency"]
-        return save_gif(frames, duration)
 
 
 class FrameAlignPolicy(Enum):
@@ -206,118 +133,222 @@ class FrameAlignPolicy(Enum):
     """以循环方式延长"""
 
 
+def get_aligned_gif_indexes(
+    gif_infos: list[tuple[int, float]],
+    frame_num_target: int,
+    duration_target: float,
+    frame_align: FrameAlignPolicy = FrameAlignPolicy.no_extend,
+) -> tuple[list[list[int]], list[int]]:
+    """
+    将gif按照目标帧数和帧间隔对齐
+    :params
+        * ``gif_infos``: 每个输入gif的帧数和帧间隔，帧间隔单位为秒
+        * ``frame_num_target``: 目标gif的帧数
+        * ``duration_target``: 目标gif的帧间隔，单位为秒
+        * ``frame_align``: 要对齐的gif长度大于目标gif时，gif长度对齐方式
+    :return
+        * 输入gif的帧索引列表和目标gif的帧索引列表
+    """
+
+    frame_idxs_target: list[int] = list(range(frame_num_target))
+
+    max_total_duration_input = max(
+        frame_num * duration for frame_num, duration in gif_infos
+    )
+    total_duration_target = frame_num_target * duration_target
+    if (
+        diff_duration := max_total_duration_input - total_duration_target
+    ) >= duration_target:
+        diff_num = math.ceil(diff_duration / duration_target)
+
+        if frame_align == FrameAlignPolicy.extend_first:
+            frame_idxs_target = [0] * diff_num + frame_idxs_target
+
+        elif frame_align == FrameAlignPolicy.extend_last:
+            frame_idxs_target += [frame_num_target - 1] * diff_num
+
+        elif frame_align == FrameAlignPolicy.extend_loop:
+            frame_num_total = frame_num_target
+            # 重复目标gif，直到每个gif总时长之差在1个间隔以内，或总帧数超出最大帧数
+            while frame_num_total + frame_num_target <= meme_config.gif.gif_max_frames:
+                frame_num_total += frame_num_target
+                frame_idxs_target += list(range(frame_num_target))
+                total_duration = frame_num_total * duration_target
+                if all(
+                    math.fabs(
+                        round(total_duration / duration / frame_num)
+                        * duration
+                        * frame_num
+                        - total_duration
+                    )
+                    <= duration_target
+                    for frame_num, duration in gif_infos
+                ):
+                    break
+
+    frame_idxs_input: list[list[int]] = []
+    for frame_num, duration in gif_infos:
+        frame_idx = 0
+        time_start = 0
+        frame_idxs: list[int] = []
+        for i in range(len(frame_idxs_target)):
+            while frame_idx < frame_num:
+                if (
+                    frame_idx * duration
+                    <= i * duration_target - time_start
+                    < (frame_idx + 1) * duration
+                ):
+                    frame_idxs.append(frame_idx)
+                    break
+                else:
+                    frame_idx += 1
+                    if frame_idx >= frame_num:
+                        frame_idx = 0
+                        time_start += frame_num * duration
+        frame_idxs_input.append(frame_idxs)
+
+    return frame_idxs_input, frame_idxs_target
+
+
+class Maker(Protocol):
+    def __call__(self, imgs: list[BuildImage]) -> BuildImage: ...
+
+
+class GifMaker(Protocol):
+    def __call__(self, i: int) -> Maker: ...
+
+
+def merge_gif(imgs: list[BuildImage], func: Maker) -> BytesIO:
+    """
+    合并动图
+    :params
+      * ``imgs``: 输入图片列表
+      * ``func``: 图片处理函数，输入imgs，返回处理后的图片
+    """
+    images = [img.image for img in imgs]
+    gif_images = [image for image in images if getattr(image, "is_animated", False)]
+
+    if len(gif_images) == 1:
+        frames: list[IMG] = []
+        frame_num = getattr(gif_images[0], "n_frames", 1)
+        duration = get_avg_duration(gif_images[0])
+        for i in range(frame_num):
+            frame_images: list[IMG] = []
+            for image in images:
+                if getattr(image, "is_animated", False):
+                    image.seek(i)
+                frame_images.append(image.copy())
+            frame = func([BuildImage(image) for image in frame_images])
+            frames.append(frame.image)
+        return save_gif(frames, duration)
+
+    gif_infos = [
+        (getattr(image, "n_frames", 1), get_avg_duration(image)) for image in gif_images
+    ]
+    target_duration = min(duration for _, duration in gif_infos)
+    target_gif_idx = [
+        i for i, (_, duration) in enumerate(gif_infos) if duration == target_duration
+    ][0]
+    target_frame_num = gif_infos[target_gif_idx][0]
+    gif_infos.pop(target_gif_idx)
+    frame_idxs, target_frame_idxs = get_aligned_gif_indexes(
+        gif_infos, target_frame_num, target_duration, FrameAlignPolicy.extend_loop
+    )
+    frame_idxs.insert(target_gif_idx, target_frame_idxs)
+
+    frames: list[IMG] = []
+    for i in range(len(target_frame_idxs)):
+        frame_images: list[IMG] = []
+        gif_idx = 0
+        for image in images:
+            if getattr(image, "is_animated", False):
+                image.seek(frame_idxs[gif_idx][i])
+                gif_idx += 1
+            frame_images.append(image.copy())
+        frame = func([BuildImage(image) for image in frame_images])
+        frames.append(frame.image)
+
+    return save_gif(frames, target_duration)
+
+
+def make_jpg_or_gif(imgs: list[BuildImage], func: Maker) -> BytesIO:
+    """
+    制作静图或者动图
+    :params
+      * ``imgs``: 输入图片列表
+      * ``func``: 图片处理函数，输入imgs，返回处理后的图片
+    """
+    images = [img.image for img in imgs]
+    if all(not getattr(image, "is_animated", False) for image in images):
+        return func(imgs).save_jpg()
+
+    return merge_gif(imgs, func)
+
+
+def make_png_or_gif(imgs: list[BuildImage], func: Maker) -> BytesIO:
+    """
+    制作静图或者动图
+    :params
+      * ``imgs``: 输入图片列表
+      * ``func``: 图片处理函数，输入imgs，返回处理后的图片
+    """
+    images = [img.image for img in imgs]
+    if all(not getattr(image, "is_animated", False) for image in images):
+        return func(imgs).save_png()
+
+    return merge_gif(imgs, func)
+
+
 def make_gif_or_combined_gif(
-    img: BuildImage,
+    imgs: list[BuildImage],
     maker: GifMaker,
     frame_num: int,
     duration: float,
     frame_align: FrameAlignPolicy = FrameAlignPolicy.no_extend,
-    input_based: bool = False,
-    keep_transparency: bool = False,
 ) -> BytesIO:
     """
     使用静图或动图制作gif
     :params
-      * ``img``: 输入图片，如头像
+      * ``imgs``: 输入图片列表
       * ``maker``: 图片处理函数生成，传入第几帧，返回对应的图片处理函数
       * ``frame_num``: 目标gif的帧数
       * ``duration``: 相邻帧之间的时间间隔，单位为秒
       * ``frame_align``: 要叠加的gif长度大于基准gif时，gif长度对齐方式
-      * ``input_based``: 是否以输入gif为基准合成gif，默认为`False`，即以目标gif为基准
-      * ``keep_transparency``: 传入gif时，是否保留该gif的透明度
     """
-    image = img.image
-    if not getattr(image, "is_animated", False):
-        return save_gif([maker(i)(img).image for i in range(frame_num)], duration)
+    images = [img.image for img in imgs]
+    if all(not getattr(image, "is_animated", False) for image in images):
+        return save_gif([maker(i)(imgs).image for i in range(frame_num)], duration)
 
-    frame_num_in = getattr(image, "n_frames", 1)
-    duration_in = get_avg_duration(image) / 1000
-    total_duration_in = frame_num_in * duration_in
-    total_duration = frame_num * duration
-
-    if input_based:
-        frame_num_base = frame_num_in
-        frame_num_fit = frame_num
-        duration_base = duration_in
-        duration_fit = duration
-        total_duration_base = total_duration_in
-        total_duration_fit = total_duration
-    else:
-        frame_num_base = frame_num
-        frame_num_fit = frame_num_in
-        duration_base = duration
-        duration_fit = duration_in
-        total_duration_base = total_duration
-        total_duration_fit = total_duration_in
-
-    frame_idxs: list[int] = list(range(frame_num_base))
-    diff_duration = total_duration_fit - total_duration_base
-    diff_num = int(diff_duration / duration_base)
-
-    if diff_duration >= duration_base:
-        if frame_align == FrameAlignPolicy.extend_first:
-            frame_idxs = [0] * diff_num + frame_idxs
-
-        elif frame_align == FrameAlignPolicy.extend_last:
-            frame_idxs += [frame_num_base - 1] * diff_num
-
-        elif frame_align == FrameAlignPolicy.extend_loop:
-            frame_num_total = frame_num_base
-            # 重复基准gif，直到两个gif总时长之差在1个间隔以内，或总帧数超出最大帧数
-            while frame_num_total + frame_num_base <= meme_config.gif.gif_max_frames:
-                frame_num_total += frame_num_base
-                frame_idxs += list(range(frame_num_base))
-                multiple = round(frame_num_total * duration_base / total_duration_fit)
-                if (
-                    math.fabs(
-                        total_duration_fit * multiple - frame_num_total * duration_base
-                    )
-                    <= duration_base
-                ):
-                    break
+    gif_infos = [
+        (getattr(image, "n_frames", 1), get_avg_duration(image))
+        for image in images
+        if getattr(image, "is_animated", False)
+    ]
+    frame_idxs_input, frame_idxs_target = get_aligned_gif_indexes(
+        gif_infos, frame_num, duration, frame_align
+    )
 
     frames: list[IMG] = []
-    frame_idx_fit = 0
-    time_start = 0
-    for i, idx in enumerate(frame_idxs):
-        while frame_idx_fit < frame_num_fit:
-            if (
-                frame_idx_fit * duration_fit
-                <= i * duration_base - time_start
-                < (frame_idx_fit + 1) * duration_fit
-            ):
-                if input_based:
-                    idx_in = idx
-                    idx_maker = frame_idx_fit
-                else:
-                    idx_in = frame_idx_fit
-                    idx_maker = idx
-
-                func = maker(idx_maker)
-                image.seek(idx_in)
-                frames.append(func(BuildImage(image.copy())).image)
-                break
-            else:
-                frame_idx_fit += 1
-                if frame_idx_fit >= frame_num_fit:
-                    frame_idx_fit = 0
-                    time_start += total_duration_fit
-
-    if keep_transparency:
-        image.seek(0)
-        if image.info.__contains__("transparency"):
-            frames[0].info["transparency"] = image.info["transparency"]
+    for i, idx in enumerate(frame_idxs_target):
+        frame_images: list[IMG] = []
+        gif_idx = 0
+        for image in images:
+            if getattr(image, "is_animated", False):
+                image.seek(frame_idxs_input[gif_idx][i])
+                gif_idx += 1
+            frame_images.append(image.copy())
+        frame = maker(idx)([BuildImage(image) for image in frame_images])
+        frames.append(frame.image)
 
     return save_gif(frames, duration)
 
 
-async def translate(text: str, lang_from: str = "auto", lang_to: str = "zh") -> str:
+def translate(text: str, lang_from: str = "auto", lang_to: str = "zh") -> str:
     appid = meme_config.translate.baidu_trans_appid
     apikey = meme_config.translate.baidu_trans_apikey
     if not appid or not apikey:
-        raise MemeGeneratorException(
-            "The `baidu_trans_appid` or `baidu_trans_apikey` is not set."
-            "Please check your config file!"
+        raise MemeFeedback(
+            '"baidu_trans_appid" 或 "baidu_trans_apikey" 未设置，请检查配置文件！'
         )
     salt = str(round(time.time() * 1000))
     sign_raw = appid + text + salt + apikey
@@ -331,9 +362,8 @@ async def translate(text: str, lang_from: str = "auto", lang_to: str = "zh") -> 
         "sign": sign,
     }
     url = "https://fanyi-api.baidu.com/api/trans/vip/translate"
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(url, params=params)
-        result = resp.json()
+    resp = httpx.get(url, params=params)
+    result = resp.json()
     return result["trans_result"][0]["dst"]
 
 
@@ -343,94 +373,122 @@ def random_text() -> str:
     )
 
 
-def random_image() -> BytesIO:
-    text = random.choice(["😂", "😅", "🤗", "🤤", "🥵", "🥰", "😍", "😭", "😋", "😏"])
-    return (
-        BuildImage.new("RGBA", (500, 500), "white")
-        .draw_text((0, 0, 500, 500), text, max_fontsize=400)
-        .save_png()
-    )
+def random_image() -> bytes:
+    return random.choice(
+        list((resources_dir / "images" / "emojis").glob("*.png"))
+    ).read_bytes()
 
 
 @dataclass
-class TextProperties:
-    fill: ColorType = "black"
-    style: FontStyle = "normal"
-    weight: FontWeight = "normal"
-    stroke_width: int = 0
-    stroke_fill: Optional[ColorType] = None
-
-
-def default_template(meme: "Meme", number: int) -> str:
-    return f"{number}. {'/'.join(meme.keywords)}"
+class MemeProperties:
+    disabled: bool = False
+    labels: list[Literal["new", "hot"]] = field(default_factory=list)
 
 
 def render_meme_list(
-    meme_list: list[tuple["Meme", TextProperties]],
+    meme_list: list[tuple["Meme", MemeProperties]],
     *,
-    template: Callable[["Meme", int], str] = default_template,
-    order_direction: Literal["row", "column"] = "column",
-    columns: int = 4,
-    column_align: Literal["left", "center", "right"] = "left",
-    item_padding: tuple[int, int] = (15, 6),
-    image_padding: tuple[int, int] = (50, 50),
-    bg_color: ColorType = "white",
-    fontsize: int = 30,
-    fontname: str = "",
-    fallback_fonts: list[str] = [],
+    text_template: str = "{keywords}",
+    add_category_icon: bool = True,
 ) -> BytesIO:
-    item_images: list[Text2Image] = []
-    for i, (meme, properties) in enumerate(meme_list, start=1):
-        text = template(meme, i)
-        t2m = Text2Image.from_text(
-            text,
-            fontsize=fontsize,
-            style=properties.style,
-            weight=properties.weight,
-            fill=properties.fill,
-            stroke_width=properties.stroke_width,
-            stroke_fill=properties.stroke_fill,
-            fontname=fontname,
-            fallback_fonts=fallback_fonts,
-        )
-        item_images.append(t2m)
-    char_A = (
-        Text2Image.from_text(
-            "A", fontsize=fontsize, fontname=fontname, fallback_fonts=fallback_fonts
-        )
-        .lines[0]
-        .chars[0]
-    )
-    num_per_col = math.ceil(len(item_images) / columns)
-    column_images: list[BuildImage] = []
-    for col in range(columns):
-        if order_direction == "column":
-            images = item_images[col * num_per_col : (col + 1) * num_per_col]
-        else:
-            images = [
-                item_images[num * columns + col]
-                for num in range((len(item_images) - col - 1) // columns + 1)
-            ]
-        img_w = max(t2m.width for t2m in images) + item_padding[0] * 2
-        img_h = (char_A.ascent + item_padding[1] * 2) * len(images) + char_A.descent
-        image = BuildImage.new("RGB", (img_w, img_h), bg_color)
-        y = item_padding[1]
-        for t2m in images:
-            if column_align == "left":
-                x = 0
-            elif column_align == "center":
-                x = (img_w - t2m.width - item_padding[0] * 2) // 2
-            else:
-                x = img_w - t2m.width - item_padding[0] * 2
-            t2m.draw_on_image(image.image, (x, y))
-            y += char_A.ascent + item_padding[1] * 2
-        column_images.append(image)
+    TEXT_COLOR_NORMAL = "#444444"
+    TEXT_COLOR_DISABLED = "#d3d3d3"
+    BLOCK_COLOR_1 = "#f5f5f5"
+    BLOCK_COLOR_2 = "#ffffff"
+    BG_COLOR = "#fdfcf8"
+    FONTSIZE = 30
+    BLOCK_HEIGHT = 50
 
-    img_w = sum(img.width for img in column_images) + image_padding[0] * 2
-    img_h = max(img.height for img in column_images) + image_padding[1] * 2
-    image = BuildImage.new("RGB", (img_w, img_h), bg_color)
-    x, y = image_padding
-    for img in column_images:
-        image.paste(img, (x, y))
-        x += img.width
-    return image.save_jpg()
+    icon_dir = resources_dir / "images" / "icons"
+    category_image = BuildImage.open(icon_dir / "image.png").resize((30, 30))
+    category_text = BuildImage.open(icon_dir / "text.png").resize((30, 30))
+    category_image_disabled = BuildImage.open(icon_dir / "image_disabled.png").resize(
+        (30, 30)
+    )
+    category_text_disabled = BuildImage.open(icon_dir / "text_disabled.png").resize(
+        (30, 30)
+    )
+    label_new = BuildImage.open(icon_dir / "new.png").resize((30, 30))
+    label_hot = BuildImage.open(icon_dir / "hot.png").resize((30, 30))
+
+    def meme_text(number: int, meme: "Meme") -> str:
+        return text_template.format(
+            index=number + 1,
+            key=meme.key,
+            keywords="/".join(meme.keywords),
+            shortcuts="/".join(
+                shortcut.humanized or shortcut.key for shortcut in meme.shortcuts
+            ),
+            tags="/".join(meme.tags),
+        )
+
+    def text_block(
+        text: str,
+        max_width: int,
+        block_color: ColorType,
+        properties: MemeProperties,
+        category: Literal["text", "image"] = "text",
+    ) -> BuildImage:
+        image = BuildImage.new("RGBA", (max_width, BLOCK_HEIGHT), block_color)
+        if category == "text":
+            icon = category_text_disabled if properties.disabled else category_text
+        else:
+            icon = category_image_disabled if properties.disabled else category_image
+        x = 0
+        if add_category_icon:
+            image.paste(icon, (x + 10, 10), alpha=True)
+            x += 50
+        text_color = TEXT_COLOR_DISABLED if properties.disabled else TEXT_COLOR_NORMAL
+        t2m = Text2Image.from_text(text, fontsize=FONTSIZE, fill=text_color)
+        t2m.draw_on_image(image.image, (x + 5, (image.height - t2m.height) // 2))
+        x += t2m.width + 10
+        if "new" in properties.labels:
+            image.paste(label_new, (x + 5, 10), alpha=True)
+            x += 35
+        if "hot" in properties.labels:
+            image.paste(label_hot, (x + 5, 10), alpha=True)
+            x += 35
+        return image
+
+    meme_num = len(meme_list)
+    cols = math.ceil(math.sqrt(meme_num / 16))
+    rows = math.ceil(meme_num / cols)
+
+    col_images: list[BuildImage] = []
+    for col in range(cols):
+        col_meme_list = meme_list[col * rows : (col + 1) * rows]
+        max_width = max(
+            Text2Image.from_text(
+                meme_text(col * rows + row, meme), fontsize=FONTSIZE
+            ).width
+            + (50 if add_category_icon else 0)
+            + 20
+            + len(properties.labels) * 35
+            for row, (meme, properties) in enumerate(col_meme_list)
+        )
+        col_image = BuildImage.new("RGBA", (max_width, rows * BLOCK_HEIGHT), BG_COLOR)
+        for row, (meme, properties) in enumerate(col_meme_list):
+            text = meme_text(col * rows + row, meme)
+            block_color = BLOCK_COLOR_1 if (row + col) % 2 == 0 else BLOCK_COLOR_2
+            category = "text" if meme.params_type.max_images == 0 else "image"
+            col_image.paste(
+                text_block(text, max_width, block_color, properties, category),
+                (0, row * BLOCK_HEIGHT),
+            )
+        col_images.append(col_image)
+
+    margin = 30
+    frame = BuildImage.new(
+        "RGBA",
+        (
+            sum(image.width for image in col_images) + margin * 2,
+            rows * BLOCK_HEIGHT + margin * 2,
+        ),
+        BG_COLOR,
+    )
+    x = margin
+    y = margin
+    for image in col_images:
+        frame.paste(image, (x, y))
+        x += image.width
+    return frame.save_png()

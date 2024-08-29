@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from pil_utils import BuildImage
@@ -14,8 +15,8 @@ def what_he_wants(images: list[BuildImage], texts: list[str], args):
     text = f"{date}我会给你每个男人都最想要的东西···"
     frame = BuildImage.open(img_dir / "0.png")
 
-    def make(img: BuildImage) -> BuildImage:
-        img = img.convert("RGBA").resize((538, 538), keep_ratio=True, inside=True)
+    def make(imgs: list[BuildImage]) -> BuildImage:
+        img = imgs[0].convert("RGBA").resize((538, 538), keep_ratio=True, inside=True)
         new_frame = frame.copy()
         try:
             new_frame.draw_text(
@@ -34,7 +35,7 @@ def what_he_wants(images: list[BuildImage], texts: list[str], args):
         new_frame.paste(img, (486, 616), alpha=True)
         return new_frame
 
-    return make_jpg_or_gif(images[0], make)
+    return make_jpg_or_gif(images, make)
 
 
 add_meme(
@@ -46,4 +47,6 @@ add_meme(
     max_texts=1,
     default_texts=["今年520"],
     keywords=["最想要的东西"],
+    date_created=datetime(2023, 5, 20),
+    date_modified=datetime(2023, 5, 20),
 )
