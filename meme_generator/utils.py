@@ -10,7 +10,7 @@ from enum import Enum
 from functools import partial, wraps
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar
 
 import httpx
 from PIL.Image import Image as IMG
@@ -101,7 +101,7 @@ def get_avg_duration(image: IMG) -> float:
     n_frames = getattr(image, "n_frames", 1)
     for i in range(n_frames):
         image.seek(i)
-        total_duration += image.info["duration"]
+        total_duration += image.info.get("duration", 20)
     return total_duration / n_frames / 1000
 
 
@@ -210,12 +210,9 @@ def get_aligned_gif_indexes(
     return frame_idxs_input, frame_idxs_target
 
 
-class Maker(Protocol):
-    def __call__(self, imgs: list[BuildImage]) -> BuildImage: ...
+Maker = Callable[[list[BuildImage]], BuildImage]
 
-
-class GifMaker(Protocol):
-    def __call__(self, i: int) -> Maker: ...
+GifMaker = Callable[[int], Maker]
 
 
 def merge_gif(imgs: list[BuildImage], func: Maker) -> BytesIO:
