@@ -14,7 +14,7 @@ exclude = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 httpx = ">=0.20.0,<1.0.0"
 loguru = ">=0.6.0,<1.0.0"
 pil-utils = "^0.2.0"

@@ -35,7 +35,7 @@ args_type = MemeArgsType(
     ],
 )
 
-default_message = "https://github.com/MeetWq/meme-generator"
+default_message = "https://space.bilibili.com/3670216"
 
 
 def alipay(images: list[BuildImage], texts: list[str], args: Model):
