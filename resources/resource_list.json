@@ -564,6 +564,10 @@
     "hash": "e230240d0929b774a985a301962d36b5"
   },
   {
+    "path": "caused_by_this/images/0.png",
+    "hash": "14a660edad64a680d7e7074fb5d26eb5"
+  },
+  {
     "path": "certificate/images/0.png",
     "hash": "4fa571530f1c9b4701bdc3240a19fe25"
   },
@@ -6578,6 +6582,10 @@
   {
     "path": "smash/images/0.png",
     "hash": "f14a1ff64015a1cd5cf752e80e5cf367"
+  },
+  {
+    "path": "sold_out/images/0.png",
+    "hash": "35af26726c934193eeab7bb9c2621916"
   },
   {
     "path": "speechless/images/sweat.png",
