@@ -74,7 +74,7 @@ add_meme(
     max_texts=1,
     default_texts=["汐汐"],
     args_type=args_type,
-    keywords=["汐汐", "今汐"],
+    keywords=["汐汐"],
     tags=MemeTags.jinhsi,
     date_created=datetime(2024, 12, 7),
     date_modified=datetime(2024, 12, 7),
