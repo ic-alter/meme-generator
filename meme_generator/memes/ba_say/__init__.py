@@ -121,7 +121,7 @@ def ba_say(images, texts: list[str], args: Model):
 add_meme(
     "ba_say",
     ba_say,
-    min_texts=0,
+    min_texts=1,
     max_texts=1,
     default_texts=["那我问你"],
     args_type=args_type,

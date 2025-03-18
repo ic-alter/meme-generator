@@ -2548,6 +2548,10 @@
     "hash": "acc2814bf86e9660f551b73d40909d53"
   },
   {
+    "path": "fogging/images/0.png",
+    "hash": "4ea66ff0ad95d81fd2f0b87c99ba6302"
+  },
+  {
     "path": "frieren_take/images/0.png",
     "hash": "e398b7c3f7088245e4b3772375757beb"
   },
@@ -7742,6 +7746,10 @@
   {
     "path": "read_book/images/0.png",
     "hash": "c0bfd676ec62f8ef1a2e2c98244681ba"
+  },
+  {
+    "path": "remote_control/images/0.png",
+    "hash": "94b68bbceaed75ca70a974069fc6b9a2"
   },
   {
     "path": "repeat/images/0.jpg",
