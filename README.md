@@ -19,7 +19,10 @@ _✨ 表情包生成器，用于制作各种沙雕表情包 ✨_
 
 </div>
 
-表情包制作 Rust 版 [--> meme-generator-rs <--](https://github.com/MemeCrafters/meme-generator-rs)
+> [!NOTE]
+> 本项目另有 Rust 重构版 [--> meme-generator-rs <--](https://github.com/MemeCrafters/meme-generator-rs)
+> 
+> 拥有更小的内存占用和更快的运行速度，欢迎使用！
 
 ## 表情列表
 
