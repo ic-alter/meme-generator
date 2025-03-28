@@ -32,11 +32,13 @@ _✨ 表情包生成器，用于制作各种沙雕表情包 ✨_
 
 详见 Wiki：[--> Wiki <--](https://github.com/MemeCrafters/meme-generator/wiki)
 
-## 开发
+## 其他表情
 
-如果希望编写、贡献新的表情，可以参考 [--> 新表情编写指北 <--](https://github.com/MemeCrafters/meme-generator/wiki/%E6%96%B0%E8%A1%A8%E6%83%85%E7%BC%96%E5%86%99%E6%8C%87%E5%8C%97)
+可以加载非本仓库内置的表情，参考 [--> 加载其他表情 <--](https://github.com/MemeCrafters/meme-generator/wiki/%E5%8A%A0%E8%BD%BD%E5%85%B6%E4%BB%96%E8%A1%A8%E6%83%85)
 
-对于一些不适合放在主仓库的表情，可以提交至 [--> 额外表情仓库 <--](https://github.com/MemeCrafters/meme-generator-contrib)
+其他表情仓库：
+- [MemeCrafters/meme-generator-contrib](https://github.com/MemeCrafters/meme-generator-contrib) meme-generator 额外表情仓库
+- [anyliew/meme_emoji](https://github.com/anyliew/meme_emoji) 更多热门表情包模板
 
 ## 声明
 
