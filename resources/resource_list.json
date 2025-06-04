@@ -7052,6 +7052,30 @@
     "hash": "8aaa0621bce8a04b4932d997c47bae03"
   },
   {
+    "path": "play_baseball/images/0.png",
+    "hash": "bac27cb1b72109c667f4e22af9dd71a1"
+  },
+  {
+    "path": "play_baseball/images/1.png",
+    "hash": "699b32922d158e9444590d60841f4d55"
+  },
+  {
+    "path": "play_baseball/images/2.png",
+    "hash": "95cbbc8f0b2da6bc9522738abb6d67e7"
+  },
+  {
+    "path": "play_baseball/images/3.png",
+    "hash": "1f3b85c5ddaa364619a843e047343347"
+  },
+  {
+    "path": "play_baseball/images/4.png",
+    "hash": "209d0263e2f65a6fc686d40d5afb8131"
+  },
+  {
+    "path": "play_baseball/images/5.png",
+    "hash": "49bfb485356ee3a060997bf78535d252"
+  },
+  {
     "path": "play_basketball/images/0.png",
     "hash": "c530428be694d32459491ef25e269d2b"
   },
@@ -8174,6 +8198,70 @@
   {
     "path": "rip_angrily/images/0.png",
     "hash": "0c58878dfbe96bdc8a4f8cb3a5d9ae79"
+  },
+  {
+    "path": "rip_clothes/images/0.png",
+    "hash": "61a7ab2f9674e6d81b4ffaaeed36739d"
+  },
+  {
+    "path": "rip_clothes/images/1.png",
+    "hash": "e1e37ed572f26dda9237d6450cc9178e"
+  },
+  {
+    "path": "rip_clothes/images/10.png",
+    "hash": "93a1280731837c8622d3c8fbc9b099a9"
+  },
+  {
+    "path": "rip_clothes/images/11.png",
+    "hash": "106a5ac27df96db7ff705cec3a8c0d8f"
+  },
+  {
+    "path": "rip_clothes/images/12.png",
+    "hash": "7f8e7325377f09a4a3b1c8459509b54b"
+  },
+  {
+    "path": "rip_clothes/images/13.png",
+    "hash": "2a313df1440277511cd5589a01cea231"
+  },
+  {
+    "path": "rip_clothes/images/14.png",
+    "hash": "e787c0ce9edf888cbb86058e96bce4aa"
+  },
+  {
+    "path": "rip_clothes/images/15.png",
+    "hash": "50a64ba74070859ce4b4cf90f5f453c0"
+  },
+  {
+    "path": "rip_clothes/images/2.png",
+    "hash": "b4dc21764fe7ae02152f2f85a53e0ada"
+  },
+  {
+    "path": "rip_clothes/images/3.png",
+    "hash": "d097530022ad5782631e2a8c48cffb45"
+  },
+  {
+    "path": "rip_clothes/images/4.png",
+    "hash": "5ea43bcfc8b386e1f0c51a00d908378f"
+  },
+  {
+    "path": "rip_clothes/images/5.png",
+    "hash": "badb01f1c155e307644c9c079c1ab6cf"
+  },
+  {
+    "path": "rip_clothes/images/6.png",
+    "hash": "216b236e97d60b32987bef2d52328cb3"
+  },
+  {
+    "path": "rip_clothes/images/7.png",
+    "hash": "2ea5bda7d56a9e5c8f4ac76d6cdc7409"
+  },
+  {
+    "path": "rip_clothes/images/8.png",
+    "hash": "8da0c96955444001086f1f859184550c"
+  },
+  {
+    "path": "rip_clothes/images/9.png",
+    "hash": "2b054c77f253653f5fd6492efc2939bc"
   },
   {
     "path": "rise_dead/images/0.png",
