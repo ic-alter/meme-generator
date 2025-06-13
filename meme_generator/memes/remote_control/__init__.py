@@ -46,7 +46,7 @@ add_meme(
     remote_control,
     min_images=1,
     max_images=1,
-    keywords=["遥控", "控制"],
+    keywords=["遥控", "控制", "跳蛋"],
     date_created=datetime(2025, 3, 4),
     date_modified=datetime(2025, 3, 24),
 )
