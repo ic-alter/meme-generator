@@ -43,7 +43,7 @@ add_meme(
     min_texts=0,
     max_texts=1,
     default_texts=[default_text],
-    keywords=["闭嘴", "我爸爸"],
+    keywords=["我爸爸","闭嘴！"],
     date_created=datetime(2024, 5, 12),
     date_modified=datetime(2024, 5, 16),
 )

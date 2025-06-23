@@ -40,5 +40,5 @@ add_meme(
     fast_do,
     min_images=2,
     max_images=2,
-    keywords=["狠撅", "狠狠地撅", "狠狠的撅", "快撅"],
+    keywords=["狠撅", "狠狠地撅", "狠狠的撅", "快撅", "狂撅"],
 )
