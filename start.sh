@@ -5,7 +5,8 @@ docker run -d \
   -v /home/ubuntu/byy/bot/meme-generator/meme_generator:/app/meme_generator \
   -v /home/ubuntu/byy/bot/meme-generator/meme-generator-contrib:/data \
   -v /home/ubuntu/byy/bot/meme-generator/meme_emoji:/meme_emoji \
-  -e MEME_DIRS='["/data/memes","/meme_emoji/aircraft_cup","/meme_emoji/emoji"]' \
+  -v /home/ubuntu/byy/bot/meme-generator/meme-generator-jj:/meme-generator-jj \
+  -e MEME_DIRS='["/data/memes","/meme_emoji/aircraft_cup","/meme_emoji/emoji","/meme-generator-jj/memes"]' \
   -e MEME_DISABLED_LIST='[]' \
   -e GIF_MAX_SIZE=10.0 \
   -e GIF_MAX_FRAMES=100 \
