@@ -40,6 +40,23 @@ _✨ 表情包生成器，用于制作各种沙雕表情包 ✨_
 - [MemeCrafters/meme-generator-contrib](https://github.com/MemeCrafters/meme-generator-contrib) meme-generator 额外表情仓库
 - [anyliew/meme_emoji](https://github.com/anyliew/meme_emoji) 更多热门表情包模板
 
+## 已知问题
+
+- Windows 下程序无报错退出
+
+需要安装 [Visual C++ 运行时](https://aka.ms/vs/17/release/VC_redist.x64.exe)
+
+相关 Issue：https://github.com/kyamagu/skia-python/issues/289
+
+- Linux 下字体异常
+
+设置 locate 为英文：
+```
+export LANG=en_US.UTF-8
+```
+
+相关 Issue：https://github.com/rust-skia/rust-skia/issues/963
+
 ## 声明
 
 本仓库的表情素材等均来自网络，如有侵权请联系作者删除
