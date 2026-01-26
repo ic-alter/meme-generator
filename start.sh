@@ -7,7 +7,8 @@ docker run -d \
   -v /home/ubuntu/byy/bot/meme-generator/meme_emoji:/meme_emoji \
   -v /home/ubuntu/byy/bot/meme-generator/meme_emoji_nsfw:/meme_emoji_nsfw \
   -v /home/ubuntu/byy/bot/meme-generator/meme-generator-jj:/meme-generator-jj \
-  -e MEME_DIRS='["/data/memes","/meme_emoji/emoji","/meme-generator-jj/memes","/meme_emoji_nsfw/emoji"]' \
+  -v /home/ubuntu/byy/bot/meme-generator/tudou-meme:/tudou-meme \
+  -e MEME_DIRS='["/data/memes","/meme_emoji/emoji","/meme-generator-jj/memes","/meme_emoji_nsfw/emoji","/tudou-meme/memes"]' \
   -e MEME_DISABLED_LIST='[]' \
   -e GIF_MAX_SIZE=10.0 \
   -e GIF_MAX_FRAMES=100 \
@@ -17,5 +18,5 @@ docker run -d \
   ghcr.io/memecrafters/meme-generator:0.1.14
 
 
-  # 添加新表情包后，需要移除原来的镜像
+  # 添加新表情包后，需要移除原来的容器
   # 原来的镜像是  meetwq/meme-generator:main
